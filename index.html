@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sesión Sinergias — Grupo BID</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;overflow-x:hidden;max-width:100vw;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#F5F8FC;color:#0F172A;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit}
+  input,textarea,select{font-family:inherit;font-size:14px}
+  textarea:focus,input:focus,select:focus{border-color:#1E4A9E !important;box-shadow:0 0 0 3px rgba(30,74,158,.1)}
+  .loading{display:flex;align-items:center;justify-content:center;min-height:100vh;color:#64748B;font-size:14px}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div id="root"><div class="loading">Cargando…</div></div>
+
+<script type="text/babel" data-type="module">
+// ==================== DATOS ====================
+const ENTIDADES = [
+  { id: 'BID', label: 'BID', color: '#1E4A9E', desc: 'Banco Interamericano de Desarrollo' },
+  { id: 'BID Invest', label: 'BID Invest', color: '#D9633A', desc: 'Sector privado' },
+  { id: 'BID Lab', label: 'BID Lab', color: '#7CA85E', desc: 'Innovación y experimentación' },
+];
+
+// Bloques condensados de la guía (Q1–Q13 → 3 bloques esenciales)
+const BLOQUES = [
+  {
+    id: 'contexto',
+    icon: 'users',
+    titulo: 'Cómo colaboran hoy',
+    desc: 'Cómo se relacionan tu entidad y las otras dos en el día a día.',
+    preguntas: [
+      { id: 'colaboracion', label: '¿En qué sectores, operaciones o agendas se cruza tu entidad con las otras dos?', placeholder: 'Ej: coincidimos en energía y en algunos clientes del sector financiero...', required: true },
+      { id: 'ejemplo', label: '¿Recuerdas un proyecto reciente donde colaboraron dos o las tres entidades? ¿Cómo fue?', placeholder: 'Describe brevemente la experiencia y qué facilitó o trabó la colaboración...', required: false },
+    ],
+  },
+  {
+    id: 'acceso',
+    icon: 'search',
+    titulo: 'Acceso y reutilización',
+    desc: 'Cómo accedes hoy al conocimiento que vive en las otras entidades del Grupo.',
+    preguntas: [
+      { id: 'comoaccede', label: 'Cuando necesitas conocimiento que vive en otra entidad del Grupo, ¿qué haces hoy?', placeholder: 'Ej: le escribo a un colega que conozco, busco en tal sistema...', required: true },
+      { id: 'duplicacion', label: '¿Has descubierto que otra entidad ya había trabajado algo muy similar a lo tuyo? ¿O reutilizado algo que te ahorró tiempo?', placeholder: 'Cuenta el caso y qué hubiera ayudado a evitar la duplicación o aprovechar la sinergia antes...', required: false },
+      { id: 'brecha', label: '¿Cuál es la mayor brecha de información entre las tres entidades que te impide trabajar de forma más coordinada?', placeholder: 'Ej: falta de visibilidad sobre qué hace cada uno, falta de lenguaje común...', required: true },
+    ],
+  },
+  {
+    id: 'plataforma',
+    icon: 'sparkles',
+    titulo: 'La Plataforma ideal',
+    desc: 'Qué necesitarías para que la Plataforma sea tu primera parada al buscar conocimiento del Grupo BID.',
+    preguntas: [
+      { id: 'primeraparada', label: 'Si la Plataforma fuera un único punto de acceso al conocimiento del Grupo BID, ¿qué tendría que pasar para que la usaras como primera parada?', placeholder: 'Ej: que contenga X información de las otras entidades, que esté integrada con...', required: true },
+      { id: 'funcionalidad', label: 'Si pudieras pedir UNA sola funcionalidad que cambiara cómo colaboran las tres entidades, ¿cuál sería?', placeholder: 'Ej: visibilidad cruzada de portafolios, mapeo de expertos, repositorio común de lecciones...', required: true },
+      { id: 'adicional', label: '¿Algo más importante que deberíamos saber? (opcional)', placeholder: 'Cualquier idea, barrera o comentario adicional...', required: false },
+    ],
+  },
+];
+
+const MAX = 600;
+
+// ==================== ICONOS ====================
+const PATHS = {
+  users:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
+  search:'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm10 2-4.35-4.35',
+  sparkles:'M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z',
+  check:'M20 6 9 17l-5-5',
+  chevronRight:'M9 18l6-6-6-6',
+  chevronLeft:'M15 18l-6-6 6-6',
+  download:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3',
+  copy:'M20 9H11a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2z M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1',
+  refresh:'M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8 M21 3v5h-5 M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16 M3 21v-5h5',
+  list:'M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01',
+  building:'M3 21h18 M5 21V7l8-4v18 M19 21V11l-6-3 M9 9v.01 M9 12v.01 M9 15v.01 M9 18v.01',
+  trash:'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
+};
+function Icon({ name, size = 20, color = 'currentColor', strokeWidth = 2, style, fill = 'none' }) {
+  const path = PATHS[name];
+  if (!path) return null;
+  const parts = path.split(' M');
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      {parts.map((p, i) => <path key={i} d={i === 0 ? p : 'M' + p} />)}
+    </svg>
+  );
+}
+
+function useIsMobile() {
+  const [m, setM] = React.useState(typeof window !== 'undefined' ? window.innerWidth < 640 : false);
+  React.useEffect(() => {
+    function check() { setM(window.innerWidth < 640); }
+    check(); window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return m;
+}
+// ==================== CONFIGURACIÓN ====================
+// Pega aquí la URL de tu Google Apps Script (termina en /exec)
+window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3LfD0heYw2OTvLOiVegaHFtryGkmUWEHWzGyohi4u6FBMP0WXIvdCQ538KVwXGkiv/exec';
+
+// ==================== API (backend) ====================
+const api = {
+  async save(resp) {
+    const url = window.APPS_SCRIPT_URL;
+    if (!url || url.includes('PEGA_AQUI')) throw new Error('Backend no configurado. Edita la línea APPS_SCRIPT_URL en index.html.');
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(resp), redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  },
+  async load() {
+    const url = window.APPS_SCRIPT_URL;
+    if (!url || url.includes('PEGA_AQUI')) return { ok: true, responses: [] };
+    const res = await fetch(url + '?t=' + Date.now(), { redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  },
+  async clear() {
+    const url = window.APPS_SCRIPT_URL;
+    if (!url || url.includes('PEGA_AQUI')) throw new Error('Backend no configurado.');
+    const res = await fetch(url + '?action=clear&t=' + Date.now(), { redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  }
+};
+
+// ==================== APP ROOT ====================
+function App() {
+  const [view, setView] = React.useState('encuesta'); // 'encuesta' | 'respuestas'
+  const [responses, setResponses] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [lastUpdate, setLastUpdate] = React.useState(new Date());
+  const isMobile = useIsMobile();
+
+  React.useEffect(() => { loadResponses(); }, []);
+
+  // Polling en vivo solo cuando se ve el dashboard
+  React.useEffect(() => {
+    if (view !== 'respuestas') return;
+    const interval = setInterval(() => loadResponses(), 4000);
+    return () => clearInterval(interval);
+  }, [view]);
+
+  async function loadResponses() {
+    try {
+      const data = await api.load();
+      const incoming = data.responses || [];
+      setResponses(prev => {
+        if (prev.length !== incoming.length || JSON.stringify(prev) !== JSON.stringify(incoming)) return incoming;
+        return prev;
+      });
+      setLastUpdate(new Date());
+    } catch (e) { console.error('Error cargando:', e); }
+    finally { setLoading(false); }
+  }
+
+  async function addResponse(resp) {
+    const result = await api.save(resp);
+    if (result && result.ok) { loadResponses(); return true; }
+    return false;
+  }
+
+  async function clearAll() {
+    if (!window.confirm('¿Borrar TODAS las respuestas del Sheet? Esta acción no se puede deshacer. (Descarga el CSV antes si quieres conservarlas.)')) return;
+    try {
+      await api.clear();
+      loadResponses();
+    } catch (e) { window.alert('Error al limpiar: ' + e.message); }
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#F5F8FC', overflowX: 'hidden', width: '100%' }}>
+      <Header isMobile={isMobile} view={view} setView={setView} count={responses.length} />
+      <div style={{ maxWidth: 880, margin: '0 auto', padding: isMobile ? '12px' : '24px 32px', width: '100%' }}>
+        {view === 'encuesta'
+          ? <Encuesta onSubmit={addResponse} isMobile={isMobile} />
+          : <Respuestas responses={responses} onClear={clearAll} loading={loading} lastUpdate={lastUpdate} onRefresh={loadResponses} isMobile={isMobile} />}
+      </div>
+      <div style={{ maxWidth: 880, margin: '0 auto', padding: isMobile ? '8px 12px 24px' : '8px 32px 32px', textAlign: 'center' }}>
+        <span style={{ fontSize: 11, color: '#94A3B8' }}>© 2026 Plataforma de Conocimiento del Grupo BID · Sesión confidencial</span>
+      </div>
+    </div>
+  );
+}
+
+function Header({ isMobile, view, setView, count }) {
+  return (
+    <div>
+      <div style={{ background: 'linear-gradient(90deg, #F87171 0%, #C026D3 50%, #6366F1 100%)', padding: isMobile ? '12px 16px' : '14px 32px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Icon name="sparkles" size={20} color="white" />
+        </div>
+        <div style={{ color: 'white', fontSize: isMobile ? 13 : 16, fontWeight: 600, letterSpacing: '-0.01em' }}>Sesión Sinergias · Grupo BID</div>
+      </div>
+      <div style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: isMobile ? '0 16px' : '0 32px' }}>
+        <div style={{ maxWidth: 880, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 52 }}>
+          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>BID · BID Invest · BID Lab</div>
+          <div style={{ display: 'flex', gap: isMobile ? 6 : 16 }}>
+            <HeaderTab active={view === 'encuesta'} onClick={() => setView('encuesta')} iconName="list" label="Aportar" />
+            <HeaderTab active={view === 'respuestas'} onClick={() => setView('respuestas')} iconName="building" label={`Respuestas${count > 0 ? ' (' + count + ')' : ''}`} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeaderTab({ active, onClick, iconName, label }) {
+  return (
+    <button onClick={onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: '0 6px', height: 52, borderBottom: active ? '2px solid #1E4A9E' : '2px solid transparent', color: active ? '#1E4A9E' : '#6B7280', fontSize: 14, fontWeight: active ? 600 : 500 }}>
+      <Icon name={iconName} size={16} /> {label}
+    </button>
+  );
+}
+
+// ==================== ENCUESTA ====================
+function Encuesta({ onSubmit, isMobile }) {
+  const [entidad, setEntidad] = React.useState('');
+  const [respuestas, setRespuestas] = React.useState({});
+  const [completed, setCompleted] = React.useState(false);
+  const [lastResp, setLastResp] = React.useState(null);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  function setField(qid, val) {
+    setRespuestas(prev => ({ ...prev, [qid]: val.slice(0, MAX) }));
+  }
+
+  // Validación: entidad + todas las preguntas required
+  const requeridas = BLOQUES.flatMap(b => b.preguntas.filter(q => q.required).map(q => q.id));
+  const faltantes = requeridas.filter(qid => !((respuestas[qid] || '').trim()));
+  const canSubmit = entidad && faltantes.length === 0 && !submitting;
+
+  async function handleSubmit() {
+    if (!entidad || faltantes.length > 0 || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    const resp = { entidad, ...respuestas, ts: Date.now() };
+    try {
+      const ok = await onSubmit(resp);
+      if (ok) {
+        setLastResp(resp);
+        setCompleted(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        setError('No se pudo guardar el aporte. Revisa tu conexión e inténtalo de nuevo.');
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+  function reset() {
+    setEntidad(''); setRespuestas({}); setCompleted(false); setLastResp(null); setError(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  if (completed) return <Gracias resp={lastResp} onReset={reset} isMobile={isMobile} />;
+
+  return (
+    <div style={{ animation: 'fadeIn 0.3s ease' }}>
+      <Intro isMobile={isMobile} />
+      <EntidadSelector entidad={entidad} setEntidad={setEntidad} isMobile={isMobile} />
+      {BLOQUES.map((bloque, bi) => (
+        <BloqueCard key={bloque.id} bloque={bloque} bi={bi} respuestas={respuestas} setField={setField} isMobile={isMobile} />
+      ))}
+      {!canSubmit && !submitting && (entidad || Object.keys(respuestas).length > 0) && (
+        <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 12, marginBottom: 16, fontSize: 13, color: '#92400E' }}>
+          {!entidad ? 'Selecciona tu entidad para continuar.' : `Faltan ${faltantes.length} ${faltantes.length === 1 ? 'pregunta clave' : 'preguntas clave'} por responder.`}
+        </div>
+      )}
+      {error && (
+        <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 10, padding: 12, marginBottom: 16, fontSize: 13, color: '#991B1B' }}>
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+      <button onClick={handleSubmit} disabled={!canSubmit} style={{
+        width: '100%', background: canSubmit ? '#1E4A9E' : '#CBD5E1', color: 'white', border: 'none',
+        padding: '15px', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: canSubmit ? 'pointer' : 'not-allowed',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        boxShadow: canSubmit ? '0 4px 12px rgba(30,74,158,.25)' : 'none', transition: 'all 0.15s'
+      }}>
+        <Icon name="check" size={18} color="white" /> {submitting ? 'Enviando…' : 'Enviar mi aporte'}
+      </button>
+    </div>
+  );
+}
+
+function Intro({ isMobile }) {
+  return (
+    <div style={{ background: 'linear-gradient(135deg, #E8F0F8 0%, #D6E8E0 100%)', borderRadius: 16, padding: isMobile ? '28px 20px' : '40px 44px', marginBottom: 20, border: '1px solid rgba(30,74,158,0.08)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#1E4A9E', fontWeight: 600, fontSize: isMobile ? 11 : 12, letterSpacing: '0.05em', marginBottom: 16 }}>
+        <Icon name="sparkles" size={14} /> SINERGIAS BID · BID INVEST · BID LAB
+      </div>
+      <h1 style={{ fontSize: isMobile ? 24 : 34, fontWeight: 800, color: '#0F172A', lineHeight: 1.15, margin: '0 0 14px 0', letterSpacing: '-0.02em' }}>
+        ¿Cómo accedemos y reutilizamos conocimiento entre el Grupo BID?
+      </h1>
+      <p style={{ fontSize: isMobile ? 14 : 16, color: '#475569', lineHeight: 1.6, margin: 0 }}>
+        Tu perspectiva sobre cómo colaboran hoy las tres entidades nos ayuda a construir la Plataforma de Conocimiento como un único punto de acceso al Grupo BID. Son tres bloques cortos. No hay respuestas correctas o incorrectas, y la sesión es confidencial.
+      </p>
+    </div>
+  );
+}
+
+function EntidadSelector({ entidad, setEntidad, isMobile }) {
+  return (
+    <div style={{ background: 'white', borderRadius: 14, padding: isMobile ? '18px 16px' : '22px 24px', marginBottom: 20, border: '1px solid #E2E8F0' }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>¿Desde qué entidad respondes?</div>
+      <div style={{ fontSize: 13, color: '#64748B', marginBottom: 14 }}>Selecciona una.</div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 10 }}>
+        {ENTIDADES.map(ent => {
+          const sel = entidad === ent.id;
+          return (
+            <button key={ent.id} onClick={() => setEntidad(ent.id)} style={{
+              background: sel ? ent.color : 'white', color: sel ? 'white' : '#0F172A',
+              border: sel ? `1px solid ${ent.color}` : '1px solid #CBD5E1',
+              borderRadius: 12, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+              transition: 'all 0.15s', boxShadow: sel ? `0 4px 14px ${ent.color}40` : 'none'
+            }}>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>{ent.label}</div>
+              <div style={{ fontSize: 11, color: sel ? 'rgba(255,255,255,0.85)' : '#94A3B8' }}>{ent.desc}</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BloqueCard({ bloque, bi, respuestas, setField, isMobile }) {
+  return (
+    <div style={{ background: 'white', borderRadius: 14, padding: isMobile ? '20px 16px' : '28px 32px', marginBottom: 16, border: '1px solid #E2E8F0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Icon name={bloque.icon} size={18} color="#1E4A9E" />
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, letterSpacing: '0.04em' }}>BLOQUE {bi + 1}</div>
+          <h2 style={{ fontSize: isMobile ? 18 : 20, fontWeight: 700, color: '#0F172A', margin: 0 }}>{bloque.titulo}</h2>
+        </div>
+      </div>
+      <p style={{ fontSize: 13, color: '#64748B', margin: '0 0 20px 48px', lineHeight: 1.5 }}>{bloque.desc}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {bloque.preguntas.map(q => (
+          <div key={q.id}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#334155', marginBottom: 8, lineHeight: 1.4 }}>
+              {q.label}
+              {q.required && <span style={{ color: '#DC2626', marginLeft: 4 }}>*</span>}
+            </label>
+            <textarea
+              value={respuestas[q.id] || ''}
+              onChange={e => setField(q.id, e.target.value)}
+              placeholder={q.placeholder}
+              style={{ width: '100%', minHeight: 80, padding: 12, borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.5 }}
+            />
+            <div style={{ textAlign: 'right', fontSize: 11, color: '#94A3B8', marginTop: 4 }}>{(respuestas[q.id] || '').length} / {MAX}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Gracias({ resp, onReset, isMobile }) {
+  const texto = formatRespuestaText(resp);
+  const [copied, setCopied] = React.useState(false);
+  function copy() {
+    navigator.clipboard.writeText(texto).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  }
+  function download() {
+    const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `aporte-${resp.entidad.replace(/\s+/g,'-')}-${Date.now()}.txt`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+  return (
+    <div style={{ animation: 'fadeIn 0.3s ease' }}>
+      <div style={{ background: 'linear-gradient(135deg, #E8F0F8 0%, #D6E8E0 100%)', borderRadius: 16, padding: isMobile ? '40px 24px' : '52px 48px', textAlign: 'center', marginBottom: 16 }}>
+        <div style={{ width: 60, height: 60, borderRadius: 16, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 4px 12px rgba(30,74,158,0.15)' }}>
+          <Icon name="check" size={30} color="#1E4A9E" />
+        </div>
+        <h2 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: '#0F172A', margin: '0 0 12px 0' }}>¡Gracias por tu contribución! 🎉</h2>
+        <p style={{ fontSize: isMobile ? 14 : 16, color: '#475569', maxWidth: 480, margin: '0 auto 24px', lineHeight: 1.6 }}>
+          Tu aporte ya se consolidó con el de los demás y aparecerá en el dashboard en vivo. Si quieres guardar una copia personal, puedes copiarla o descargarla.
+        </p>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button onClick={copy} style={{ background: 'white', color: '#1E4A9E', border: '1px solid #1E4A9E', padding: '11px 20px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <Icon name="copy" size={16} color="#1E4A9E" /> {copied ? '¡Copiado!' : 'Copiar mi aporte'}
+          </button>
+          <button onClick={download} style={{ background: 'white', color: '#1E4A9E', border: '1px solid #1E4A9E', padding: '11px 20px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <Icon name="download" size={16} color="#1E4A9E" /> Descargar (.txt)
+          </button>
+        </div>
+      </div>
+      <button onClick={onReset} style={{ width: '100%', background: '#1E4A9E', color: 'white', border: 'none', padding: '14px', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 12px rgba(30,74,158,.25)' }}>
+        <Icon name="refresh" size={16} color="white" /> Enviar otro aporte
+      </button>
+    </div>
+  );
+}
+
+// ==================== RESPUESTAS (vista de facilitador) ====================
+function Respuestas({ responses, onClear, loading, lastUpdate, onRefresh, isMobile }) {
+  function exportCSV() {
+    const headers = ['Fecha', 'Entidad'];
+    const allQ = BLOQUES.flatMap(b => b.preguntas);
+    allQ.forEach(q => headers.push(q.label));
+    const rows = [headers];
+    responses.forEach(r => {
+      const row = [new Date(r.ts).toLocaleString('es-ES'), r.entidad];
+      allQ.forEach(q => row.push((r[q.id] || '').replace(/\n/g, ' ')));
+      rows.push(row);
+    });
+    const csv = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `sinergias-bid-${Date.now()}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  if (loading && responses.length === 0) {
+    return (
+      <div style={{ background: 'white', borderRadius: 14, padding: isMobile ? '40px 20px' : '60px 40px', textAlign: 'center', border: '1px solid #E2E8F0' }}>
+        <div style={{ fontSize: 14, color: '#64748B' }}>Cargando aportes…</div>
+      </div>
+    );
+  }
+
+  if (responses.length === 0) {
+    return (
+      <div style={{ background: 'white', borderRadius: 14, padding: isMobile ? '40px 20px' : '60px 40px', textAlign: 'center', border: '1px solid #E2E8F0', animation: 'fadeIn 0.3s ease' }}>
+        <div style={{ width: 52, height: 52, borderRadius: 14, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <Icon name="building" size={26} color="#94A3B8" />
+        </div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: '#0F172A', marginBottom: 6 }}>Aún no hay aportes</div>
+        <div style={{ fontSize: 14, color: '#64748B' }}>Los aportes aparecerán aquí en vivo a medida que la gente responde.</div>
+      </div>
+    );
+  }
+
+  const porEntidad = {};
+  ENTIDADES.forEach(e => { porEntidad[e.id] = responses.filter(r => r.entidad === e.id).length; });
+
+  return (
+    <div style={{ animation: 'fadeIn 0.3s ease' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+            <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: '#0F172A', margin: 0 }}>Resultados en vivo</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'white', padding: '4px 9px', borderRadius: 20, border: '1px solid #E2E8F0' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#DC2626', animation: 'pulse 1.5s infinite' }} />
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#DC2626', letterSpacing: '0.04em' }}>EN VIVO</span>
+              {time && <span style={{ fontSize: 10, color: '#94A3B8' }}>· {time}</span>}
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: '#64748B' }}>{responses.length} {responses.length === 1 ? 'aporte recibido' : 'aportes recibidos'}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={onRefresh} style={{ background: 'white', color: '#0F172A', border: '1px solid #CBD5E1', padding: '10px 14px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Icon name="refresh" size={15} /> {!isMobile && 'Refrescar'}
+          </button>
+          <button onClick={exportCSV} style={{ background: '#1E4A9E', color: 'white', border: 'none', padding: '10px 16px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(30,74,158,.25)' }}>
+            <Icon name="download" size={15} color="white" /> {!isMobile && 'Exportar CSV'}
+          </button>
+          <button onClick={onClear} title="Borrar todo" style={{ background: 'white', color: '#DC2626', border: '1px solid #FCA5A5', padding: '10px 12px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Icon name="trash" size={15} color="#DC2626" />
+          </button>
+        </div>
+      </div>
+
+      {/* Resumen por entidad */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
+        {ENTIDADES.map(ent => (
+          <div key={ent.id} style={{ background: 'white', borderRadius: 12, padding: isMobile ? '12px' : '16px', border: '1px solid #E2E8F0', borderTop: `3px solid ${ent.color}` }}>
+            <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: ent.color, lineHeight: 1 }}>{porEntidad[ent.id]}</div>
+            <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: '#0F172A', marginTop: 4 }}>{ent.label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {responses.slice().reverse().map((r, i) => {
+          const ent = ENTIDADES.find(e => e.id === r.entidad);
+          return (
+            <div key={r.ts} style={{ background: 'white', borderRadius: 12, padding: isMobile ? 16 : 20, border: '1px solid #E2E8F0', borderLeft: `4px solid ${ent ? ent.color : '#CBD5E1'}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <span style={{ background: ent ? ent.color : '#64748B', color: 'white', padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 700 }}>{r.entidad}</span>
+                <span style={{ fontSize: 11, color: '#94A3B8' }}>{new Date(r.ts).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {BLOQUES.flatMap(b => b.preguntas).map(q => {
+                  const val = (r[q.id] || '').trim();
+                  if (!val) return null;
+                  return (
+                    <div key={q.id}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 2 }}>{q.label}</div>
+                      <div style={{ fontSize: 14, color: '#0F172A', lineHeight: 1.5 }}>{val}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function formatRespuestaText(resp) {
+  let out = `APORTE — SESIÓN SINERGIAS GRUPO BID\n`;
+  out += `Entidad: ${resp.entidad}\n`;
+  out += `Fecha: ${new Date(resp.ts || Date.now()).toLocaleString('es-ES')}\n\n`;
+  BLOQUES.forEach((b, bi) => {
+    out += `── BLOQUE ${bi + 1}: ${b.titulo.toUpperCase()} ──\n`;
+    b.preguntas.forEach(q => {
+      const val = (resp[q.id] || '').trim();
+      if (val) { out += `\n${q.label}\n${val}\n`; }
+    });
+    out += `\n`;
+  });
+  return out.trim();
+}
+
+// ==================== MOUNT ====================
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
