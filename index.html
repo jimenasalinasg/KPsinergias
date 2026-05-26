@@ -181,7 +181,12 @@ function App() {
     finally { setLoading(false); }
   }
 
-  async function addResponse(resp) {
+  async function addResponse(resp, isPartial) {
+    if (isPartial) {
+      // Guardado parcial al avanzar de bloque: silencioso, aparece en vivo
+      try { await api.save(resp); loadResponses(); } catch (e) { console.error('Parcial:', e); }
+      return true;
+    }
     const result = await api.save(resp);
     if (result && result.ok) { loadResponses(); return true; }
     return false;
@@ -243,6 +248,10 @@ function HeaderTab({ active, onClick, iconName, label }) {
 // ==================== ENCUESTA (stepper) ====================
 function Encuesta({ onSubmit, isMobile }) {
   const [step, setStep] = React.useState(0); // 0 = entidad, 1..N = bloques
+  const sessionIdRef = React.useRef(null);
+  if (!sessionIdRef.current) {
+    sessionIdRef.current = 's_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+  }
   const [entidad, setEntidad] = React.useState('');
   const [respuestas, setRespuestas] = React.useState({}); // texto libre
   const [opciones, setOpciones] = React.useState({}); // selección de dropdown por qid
@@ -266,6 +275,13 @@ function Encuesta({ onSubmit, isMobile }) {
     return op || txt;
   }
 
+  // Arma el objeto con todo lo respondido hasta ahora (para guardado parcial o final)
+  function armarResp() {
+    const combinadas = {};
+    BLOQUES.flatMap(b => b.preguntas).forEach(q => { combinadas[q.id] = combinar(q.id); });
+    return { sessionId: sessionIdRef.current, entidad, ...combinadas, ts: Date.now() };
+  }
+
   // Una pregunta está respondida si tiene dropdown elegido o texto
   function respondida(q) {
     return !!(combinar(q.id));
@@ -282,6 +298,8 @@ function Encuesta({ onSubmit, isMobile }) {
   function next() {
     if (!puedeAvanzar) return;
     if (esUltimo) { handleSubmit(); return; }
+    // Guardado parcial: envía lo que lleva hasta ahora para que aparezca en vivo
+    onSubmit(armarResp(), true);
     setStep(s => s + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -294,9 +312,7 @@ function Encuesta({ onSubmit, isMobile }) {
     if (submitting) return;
     setSubmitting(true);
     setError(null);
-    const combinadas = {};
-    BLOQUES.flatMap(b => b.preguntas).forEach(q => { combinadas[q.id] = combinar(q.id); });
-    const resp = { entidad, ...combinadas, ts: Date.now() };
+    const resp = armarResp();
     try {
       const ok = await onSubmit(resp);
       if (ok) {
@@ -313,6 +329,7 @@ function Encuesta({ onSubmit, isMobile }) {
     }
   }
   function reset() {
+    sessionIdRef.current = 's_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
     setStep(0); setEntidad(''); setRespuestas({}); setOpciones({});
     setCompleted(false); setLastResp(null); setError(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
