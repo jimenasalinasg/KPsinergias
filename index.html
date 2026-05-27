@@ -109,7 +109,7 @@ function useIsMobile() {
 }
 // ==================== CONFIGURACIÓN ====================
 // Pega aquí la URL de tu Google Apps Script (termina en /exec)
-window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3LfD0heYw2OTvLOiVegaHFtryGkmUWEHWzGyohi4u6FBMP0WXIvdCQ538KVwXGkiv/exec';
+window.APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHTqGbPHS8C66_LjXQBa9jwnkycMalDt30H4QDaMVMCVVg995hA-wt8biLoOg0Rf1g/exec';
 
 // ==================== API (backend) ====================
 function fetchWithTimeout(url, options, ms) {
@@ -419,8 +419,7 @@ function EntidadSelector({ entidad, setEntidad, isMobile }) {
               borderRadius: 12, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
               transition: 'all 0.15s', boxShadow: sel ? `0 4px 14px ${ent.color}40` : 'none'
             }}>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>{ent.label}</div>
-              <div style={{ fontSize: 11, color: sel ? 'rgba(255,255,255,0.85)' : '#94A3B8' }}>{ent.desc}</div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>{ent.label}</div>
             </button>
           );
         })}
